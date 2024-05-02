@@ -1,4 +1,7 @@
 import Phaser from "phaser";
+import Ghost from "./ghost";
+import { DIRECTIONS } from "../constants/directions";
+import TilesUtils from "../utils/tiles";
 
 declare global {
 	namespace Phaser.GameObjects {
@@ -8,10 +11,31 @@ declare global {
 	}
 }
 
-export default class OrangeGhost extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
-    super(scene, x, y, texture, frame);
-  }
+export default class OrangeGhost extends Ghost {
+	constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
+		super(scene, x, y, texture, 0, 35, DIRECTIONS.UP, frame);
+	  }
+	
+	  measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[]): { [key: string]: number; } {
+		let distanceDict: { [key: string]: number; } = {};
+		possibleDirections.forEach((direction) => {
+		  switch (direction) {
+			case DIRECTIONS.UP:
+			  distanceDict[DIRECTIONS.UP] = TilesUtils.getDistance(marker.x, marker.y - 1, pacmanX, pacmanY);
+			  break;
+			case DIRECTIONS.DOWN:
+			  distanceDict[DIRECTIONS.DOWN] = TilesUtils.getDistance(marker.x, marker.y + 1, pacmanX, pacmanY);
+			  break;
+			case DIRECTIONS.LEFT:
+			  distanceDict[DIRECTIONS.LEFT] = TilesUtils.getDistance(marker.x - 1, marker.y, pacmanX, pacmanY);
+			  break;
+			case DIRECTIONS.RIGHT:
+			  distanceDict[DIRECTIONS.RIGHT] = TilesUtils.getDistance(marker.x + 1, marker.y, pacmanX, pacmanY);
+			  break;
+		  }
+		});
+		return distanceDict;
+	  }
 }
 
 Phaser.GameObjects.GameObjectFactory.register('orange', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, frame?: string | number) {

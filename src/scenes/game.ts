@@ -4,9 +4,13 @@ import OrangeGhost from "../characters/orange";
 import RedGhost from "../characters/red";
 import { DIRECTIONS } from "../constants/directions";
 import "../characters/orange";
+import "../characters/blue";
+import "../characters/pink";
 import "../characters/red";
 import "../characters/pacman";
 import { TILE_SIZE } from "../constants/game";
+import PinkGhost from "../characters/pink";
+import BlueGhost from "../characters/blue";
 
 type TileCollisionGroup = {
   draworder: string;
@@ -47,6 +51,8 @@ export default class Game extends Scene {
   private speed = 120;
   private score = -2;
   private red!: RedGhost | null;
+  private blue!: BlueGhost | null;
+  private pink!: PinkGhost | null;
   private orange!: OrangeGhost | null;
   private graphics!: Phaser.GameObjects.Graphics | null;
 
@@ -70,7 +76,6 @@ export default class Game extends Scene {
     if (!this.wallsLayer || !this.foodLayer || !this.highScoreLayer || !this.decisionTilesLayer) return;
 
     this.debugGraphics = this.add.graphics();
-    //this.drawWallCollisionObjects();
 
     this.foodLayer.setCollisionByExclusion([-1]);
     this.decisionTilesLayer.setCollisionByExclusion([-1]);
@@ -80,20 +85,26 @@ export default class Game extends Scene {
     this.pacman = this.add.pacman(TILE_SIZE * 14, TILE_SIZE * 26.5, 'pacman', 'die-1.png');
     this.physics.add.collider(this.pacman, this.wallsLayer);
 
-    const blue = this.add.rectangle(TILE_SIZE * 12, TILE_SIZE * 17.5, 24, 24, 0x0000ff);
-    const pink = this.add.rectangle(TILE_SIZE * 14, TILE_SIZE * 17.5, 24, 24, 0xff00ff);
-    this.orange = this.add.orange(TILE_SIZE * 16, TILE_SIZE * 17.5, "orange");
+    this.blue = this.add.blue(TILE_SIZE * 12.5, TILE_SIZE * 17.5, "blue");
+    this.orange = this.add.orange(TILE_SIZE * 15.5, TILE_SIZE * 17.5, "orange");
+    this.pink = this.add.pink(TILE_SIZE * 14.5, TILE_SIZE * 17.5, "pink");
     this.red = this.add.red(TILE_SIZE * 14, TILE_SIZE * 14.5, "red");
     this.physics.add.collider(this.red, this.wallsLayer);
+    this.physics.add.collider(this.blue, this.wallsLayer);
+    this.physics.add.collider(this.orange, this.wallsLayer);
+    this.physics.add.collider(this.pink, this.wallsLayer);
     //this.physics.add.collider(this.red, this.decisionTilesLayer);
     this.setupListeners();
     this.createAnimations();
   }
 
   update(t: number, dt: number) {
-    if (!this.map || !this.pacman || !this.red || !this.wallsLayer || !this.decisionTilesLayer) return;
+    if (!this.map || !this.pacman || !this.red || !this.pink || !this.orange || !this.blue || !this.wallsLayer || !this.decisionTilesLayer) return;
     this.pacman.update(this.cursors, this.map);
-    //this.red.update(this.wallsLayer);
+    this.red.update(this.map, this.pacman.x, this.pacman.y);
+    this.orange.update(this.map, this.pacman.x, this.pacman.y);
+    this.blue.update(this.map, this.pacman.x, this.pacman.y);
+    this.pink.update(this.map, this.pacman.x, this.pacman.y);
     const GAME_WIDTH = 330;
     if (!this.pacman || !this.foodLayer) return;
 
@@ -179,41 +190,6 @@ export default class Game extends Scene {
     this.pacman.generateAnimations();
   }
 
-  drawWallCollisionObjects() {
-    if (!this.wallsLayer) return;
-    this.graphics = this.add.graphics();
-
-    this.wallsLayer.forEachTile((tile) => {
-      if (!tile || !this.tileset || !this.wallsLayer) return;
-
-      const tileWorldPos = this.wallsLayer.tileToWorldXY(tile.x, tile.y);
-      if (!tileWorldPos) return;
-
-      const collisionGroup = this.tileset.getTileCollisionGroup(tile.index);
-      if (!collisionGroup) return;
-
-      // The group will have an array of objects - these are the individual collision shapes
-      const objects = (collisionGroup as TileCollisionGroup).objects;
-      console.log(tile)
-      console.log(collisionGroup)
-      if (!this.graphics) return;
-      for (let i = 0; i < objects.length; i++) {
-        const object = objects[i];
-        const objectX = tileWorldPos.x + object.x;
-        const objectY = tileWorldPos.y + object.y;
-
-        // When objects are parsed by Phaser, they will be guaranteed to have one of the
-        // following properties if they are a rectangle/ellipse/polygon/polyline.
-        if (object.rectangle) {
-          this.graphics.strokeRect(objectX, objectY, object.width, object.height);
-        }
-      }
-
-
-      this.physics.add.existing(this.graphics);
-    })
-  }
-
   drawDebug() {
     this.debugGraphics.clear();
     this.decisionTilesLayer?.setAlpha(0);
@@ -230,7 +206,7 @@ export default class Game extends Scene {
         tileColor: null,
         collidingTileColor: new Phaser.Display.Color(0, 0, 255, 255),
         faceColor: new Phaser.Display.Color(0, 0, 255, 255)
-      })
+      });
 
       this.decisionTilesLayer?.setAlpha(80);
       this.decisionTilesLayer?.setDepth(100);

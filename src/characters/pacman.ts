@@ -34,64 +34,30 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 		super(scene, x, y, texture, frame)
 	}
 
-	/* 	handleDamage(dir: Phaser.Math.Vector2)
-		{
-			if (this._health <= 0)
-			{
-				returnGame
-			}
-	
-			if (this.healthState === HealthState.DAMAGE)
-			{
-				return
-			}
-	
-			--this._health
-	
-			if (this._health <= 0)
-			{
-				// TODO: die
-				this.healthState = HealthState.DEAD
-				this.anims.play('faune-faint')
-				this.setVelocity(0, 0)
-			}
-			else
-			{
-				this.setVelocity(dir.x, dir.y)
-	
-				this.setTint(0xff0000)
-	
-				this.healthState = HealthState.DAMAGE
-				this.damageTime = 0
-			}
-		} */
-
 	preUpdate(t: number, dt: number) {
 		super.preUpdate(t, dt)
 	}
 
 	update(cursors: Phaser.Types.Input.Keyboard.CursorKeys, map: Phaser.Tilemaps.Tilemap) {
-		if (!cursors || !this.body || !this._nextDirection) return;
-		if (this.body.blocked.left || this.body.blocked.right || this.body.blocked.up || this.body.blocked.down) {
+		this.calculateNearbyTiles(map);
+		if (this.thereIsAWall(this._direction!)) {
 			this.anims.stop();
-			this.setVelocity(0, 0);
 		}
+		if (!cursors || !this.body || !this._nextDirection) return;
 
-		if (!this.canChangeDirection(this._nextDirection, map)) return;
-		this.changeDirection(this._nextDirection);
+		//Don't change direction until you can move
+		if (this.canChangeDirection(this._nextDirection, map)){
+			this.changeDirection(this._nextDirection);
+		}
 	}
 
 	move(direction: DIRECTIONS) {
 		this._nextDirection = direction;
 	}
 	changeDirection(direction: DIRECTIONS) {
-		if(!this.body || !this._nextDirection) return false;
-		this.x = this._turningPoint.x;
-		this.y = this._turningPoint.y;
+		if (!this.body || !this._nextDirection) return false;
 		this.body.reset(this._turningPoint.x, this._turningPoint.y);
 
-
-	
 		switch (direction) {
 			case DIRECTIONS.UP:
 				this.anims.play('pacman-up', true);
@@ -109,44 +75,40 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 				this.anims.play('pacman-right', true);
 				this.setVelocity(this._speed, 0)
 				break;
-			}
+		}
 
-			this.scene.add.tween({
-				targets: this,
-				duration: this._turnSpeed,
-				angle: this.getAngle(direction),
-				ease: 'Linear',
-				startDelay: 0,
-			});
-		
 		this._direction = direction;
 		this._nextDirection = undefined;
 		this._isFirstMove = false;
 	}
 
 	getAngle(to: DIRECTIONS): string {
-		if(!this._direction || this._isFirstMove) return "0";
+		if (!this._direction || this._isFirstMove) return "0";
 		//  About-face?
-		if (this._direction === getOppositeDirection(to)){
-				return "180";
+		if (this._direction === getOppositeDirection(to)) {
+			return "180";
 		}
 
 		if ((this._direction === DIRECTIONS.UP && to === DIRECTIONS.LEFT) ||
-				(this._direction === DIRECTIONS.DOWN && to === DIRECTIONS.RIGHT) ||
-				(this._direction === DIRECTIONS.LEFT && to === DIRECTIONS.DOWN) ||
-				(this._direction === DIRECTIONS.RIGHT && to === DIRECTIONS.UP))
-		{
-				return "-90";
+			(this._direction === DIRECTIONS.DOWN && to === DIRECTIONS.RIGHT) ||
+			(this._direction === DIRECTIONS.LEFT && to === DIRECTIONS.DOWN) ||
+			(this._direction === DIRECTIONS.RIGHT && to === DIRECTIONS.UP)) {
+			return "-90";
 		}
 
 		return "90";
 
-}
+	}
+
+	calculateTurningPoint() {
+		this._turningPoint.x = (this._marker.x * TILE_SIZE) + (TILE_SIZE / 2);
+		this._turningPoint.y = (this._marker.y * TILE_SIZE) + (TILE_SIZE / 2);
+	}
 
 	intersectsTurningPoint() {
-		let { x, y } = this;
-		x = Math.floor(x);
-		y = Math.floor(y);
+		this.calculateTurningPoint()
+		let x = Math.floor(this.x);
+		let y = Math.floor(this.y);
 		return Phaser.Math.Fuzzy.Equal(x, this._turningPoint.x, this._turningPointThreshold) && Phaser.Math.Fuzzy.Equal(y, this._turningPoint.y, this._turningPointThreshold);
 	}
 
@@ -163,16 +125,12 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 	}
 
 	canChangeDirection(direction: DIRECTIONS, map: Phaser.Tilemaps.Tilemap) {
-		if(!this.body) return false;
+		if (!this.body) return false;
 
 		//if pacman is already moving in that direction, do not change direction
-		if(this._direction === direction) return false;
+		if (this._direction === direction) return false;
 
-		this.calculateNearbyTiles(map);
-		//when index != 1 means that there is an actual tile in Walls Layer in that direction and pacman cannot move there
-		if (this._nearbyTiles[direction] && this._nearbyTiles[direction]?.index !== -1) return false;
-
-		this.calculateTurningPoint()
+		if (this.thereIsAWall(direction)) return false;
 
 		//if pacman is in the turning point or it is the first move we can move
 		if (this.intersectsTurningPoint() || this._isFirstMove) return true;
@@ -180,51 +138,51 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 		return false;
 	}
 
-	calculateTurningPoint() {
-		this._turningPoint.x = (this._marker.x * TILE_SIZE) + (TILE_SIZE / 2);
-		this._turningPoint.y = (this._marker.y * TILE_SIZE) + (TILE_SIZE / 2);
+	thereIsAWall(direction: DIRECTIONS) {
+		//when index != 1 means that there is an actual tile in Walls Layer in that direction and pacman cannot move there
+		return this._nearbyTiles[direction] && this._nearbyTiles[direction]?.index !== -1 ? true : false;
 	}
 
 	generateAnimations() {
 		this.anims.create({
-      key: 'pacman-idle',
-      frames: [{ key: 'pacman', frame: 'die-1.png' }]
-    })
+			key: 'pacman-idle',
+			frames: [{ key: 'pacman', frame: 'die-1.png' }]
+		})
 
-    this.anims.create({
-      key: 'pacman-die',
-      frames: this.anims.generateFrameNames('pacman', { start: 1, end: 15, prefix: 'die-', suffix: '.png' }),
-      repeat: -1,
-      frameRate: this._animFrameRate,
-    })
+		this.anims.create({
+			key: 'pacman-die',
+			frames: this.anims.generateFrameNames('pacman', { start: 1, end: 15, prefix: 'die-', suffix: '.png' }),
+			repeat: -1,
+			frameRate: this._animFrameRate,
+		})
 
-    this.anims.create({
-      key: 'pacman-left',
-      frames: this.anims.generateFrameNames('pacman', { start: 1, end: 2, prefix: 'left-', suffix: '.png' }),
-      repeat: -1,
-      frameRate: this._animFrameRate,
-    })
+		this.anims.create({
+			key: 'pacman-left',
+			frames: this.anims.generateFrameNames('pacman', { start: 1, end: 2, prefix: 'left-', suffix: '.png' }),
+			repeat: -1,
+			frameRate: this._animFrameRate,
+		})
 
-    this.anims.create({
-      key: 'pacman-up',
-      frames: this.anims.generateFrameNames('pacman', { start: 1, end: 2, prefix: 'up-', suffix: '.png' }),
-      repeat: -1,
-      frameRate: this._animFrameRate,
-    })
+		this.anims.create({
+			key: 'pacman-up',
+			frames: this.anims.generateFrameNames('pacman', { start: 1, end: 2, prefix: 'up-', suffix: '.png' }),
+			repeat: -1,
+			frameRate: this._animFrameRate,
+		})
 
-    this.anims.create({
-      key: 'pacman-right',
-      frames: this.anims.generateFrameNames('pacman', { start: 1, end: 2, prefix: 'right-', suffix: '.png' }),
-      repeat: -1,
-      frameRate: this._animFrameRate,
-    })
+		this.anims.create({
+			key: 'pacman-right',
+			frames: this.anims.generateFrameNames('pacman', { start: 1, end: 2, prefix: 'right-', suffix: '.png' }),
+			repeat: -1,
+			frameRate: this._animFrameRate,
+		})
 
-    this.anims.create({
-      key: 'pacman-down',
-      frames: this.anims.generateFrameNames('pacman', { start: 1, end: 2, prefix: 'down-', suffix: '.png' }),
-      repeat: -1,
-      frameRate: this._animFrameRate,
-    })
+		this.anims.create({
+			key: 'pacman-down',
+			frames: this.anims.generateFrameNames('pacman', { start: 1, end: 2, prefix: 'down-', suffix: '.png' }),
+			repeat: -1,
+			frameRate: this._animFrameRate,
+		})
 	}
 }
 
