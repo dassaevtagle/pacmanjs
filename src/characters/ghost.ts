@@ -19,6 +19,8 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
     private _scatterModeTile: Phaser.Geom.Point;
     private _isScatterMode = true;
     private _timerFlag: null | number = null;
+    //@ts-ignore
+    private _ghostColor: "red" | "orange" | "pink" | "blue";
 
     constructor(scene: Phaser.Scene, x: number, y: number, texture: string, scatterModeTileX: number, scatterModeTileY: number, initialDirection: DIRECTIONS, frame?: string | number) {
         super(scene, x, y, texture, frame);
@@ -43,7 +45,6 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         //Intersection tiles take priority over walls
         if (this.thereIsAnIntersectionTile() || this.thereIsAWall(this._direction)) {
             let direction = this.chooseNextDirection(pacmanX, pacmanY);
-            this.throttleCanTurn();
             this.changeDirection(direction);
         }
     }
@@ -52,8 +53,26 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         if (this._timerFlag === null) {
             this._timerFlag = setTimeout(() => {
                 this._isScatterMode = !this._isScatterMode;
+                this.reverseDirection();
                 this._timerFlag = null;
             }, this._isScatterMode ? 7000 : 20000)
+        }
+    }
+
+    reverseDirection() {
+        switch(this._direction){
+            case DIRECTIONS.UP:
+                this.changeDirection(DIRECTIONS.DOWN);
+                break;
+            case DIRECTIONS.DOWN:
+                this.changeDirection(DIRECTIONS.UP);
+                break;
+            case DIRECTIONS.LEFT:
+                this.changeDirection(DIRECTIONS.RIGHT);
+                break;
+            case DIRECTIONS.RIGHT:
+                this.changeDirection(DIRECTIONS.LEFT);
+                break;
         }
     }
 
@@ -114,19 +133,24 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         switch (direction) {
             case DIRECTIONS.UP:
                 this.setVelocity(0, -this._speed);
+				this.anims.play(`${this._ghostColor}-up`, true);
                 break;
             case DIRECTIONS.DOWN:
                 this.setVelocity(0, this._speed);
+				this.anims.play(`${this._ghostColor}-down`, true);
                 break;
             case DIRECTIONS.LEFT:
                 this.setVelocity(-this._speed, 0);
+				this.anims.play(`${this._ghostColor}-left`, true);
                 break;
             case DIRECTIONS.RIGHT:
                 this.setVelocity(this._speed, 0);
+				this.anims.play(`${this._ghostColor}-right`, true);
                 break;
         }
 
         this._direction = direction;
+        this.throttleCanTurn();
     }
 
     thereIsAWall(direction: DIRECTIONS) {
@@ -210,6 +234,26 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         return possibleDirections;
     }
 
+    generateAnimations(ghost: "blue" | "orange" | "pink" | "red") {
+        this._ghostColor = ghost;
+        this.anims.create({
+			key: `${ghost}-left`,
+			frames: [{ key: 'ghosts', frame: `${ghost}-left.png` }]
+		});
+        this.anims.create({
+			key: `${ghost}-right`,
+			frames: [{ key: 'ghosts', frame: `${ghost}-right.png` }]
+		});
+        this.anims.create({
+			key: `${ghost}-down`,
+			frames: [{ key: 'ghosts', frame: `${ghost}-down.png` }]
+		});
+        this.anims.create({
+			key: `${ghost}-up`,
+			frames: [{ key: 'ghosts', frame: `${ghost}-up.png` }]
+		});
+    }
+
     paintNearbyTiles() {
         // Iterate through the nearby wall tiles
         for (const direction in this._nearbyWallTiles) {
@@ -226,57 +270,3 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         }
     }
 }
-
-/* 
-import Phaser from "phaser";
-import Ghost from "./ghost";
-import { DIRECTIONS } from "../constants/directions";
-
-declare global {
-  namespace Phaser.GameObjects {
-    interface GameObjectFactory {
-      red(x: number, y: number, texture: string, frame?: string | number): RedGhost
-    }
-  }
-}
-
-export default class RedGhost extends Ghost {
-  constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
-    super(scene, x, y, texture, 25, 0, frame);
-  }
-  
-  measureStrategyChaseMode(pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[]): { [key: string]: number; } {
-    throw new Error("Method not implemented.");
-  }
-  
-}
-
-Phaser.GameObjects.GameObjectFactory.register('red', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, frame?: string | number) {
-  var sprite = new RedGhost(this.scene, x, y, texture, frame)
-
-  this.displayList.add(sprite)
-  this.updateList.add(sprite)
-
-  this.scene.physics.world.enableBody(sprite, Phaser.Physics.Arcade.DYNAMIC_BODY)
-
-  sprite.body?.setSize(11, 11);
-
-  return sprite
-})
-
-possibleDirections.forEach((direction) => {
-       switch (direction) {
-         case DIRECTIONS.UP:
-           distanceDict[DIRECTIONS.UP] = TilesUtils.getDistance(this._marker.x, this._marker.y - 1, pacmanX, pacmanY);
-           break;
-         case DIRECTIONS.DOWN:
-           distanceDict[DIRECTIONS.DOWN] = TilesUtils.getDistance(this._marker.x, this._marker.y + 1, pacmanX, pacmanY);
-           break;
-         case DIRECTIONS.LEFT:
-           distanceDict[DIRECTIONS.LEFT] = TilesUtils.getDistance(this._marker.x - 1, this._marker.y, pacmanX, pacmanY);
-           break;
-         case DIRECTIONS.RIGHT:
-           distanceDict[DIRECTIONS.RIGHT] = TilesUtils.getDistance(this._marker.x + 1, this._marker.y, pacmanX, pacmanY);
-           break;
-       }
-*/

@@ -85,10 +85,10 @@ export default class Game extends Scene {
     this.pacman = this.add.pacman(TILE_SIZE * 14, TILE_SIZE * 26.5, 'pacman', 'die-1.png');
     this.physics.add.collider(this.pacman, this.wallsLayer);
 
-    this.blue = this.add.blue(TILE_SIZE * 12.5, TILE_SIZE * 17.5, "blue");
-    this.orange = this.add.orange(TILE_SIZE * 15.5, TILE_SIZE * 17.5, "orange");
-    this.pink = this.add.pink(TILE_SIZE * 14.5, TILE_SIZE * 17.5, "pink");
-    this.red = this.add.red(TILE_SIZE * 14, TILE_SIZE * 14.5, "red");
+    this.blue = this.add.blue(TILE_SIZE * 12.5, TILE_SIZE * 17.5, "ghosts", "blue-left.png");
+    this.orange = this.add.orange(TILE_SIZE * 15.5, TILE_SIZE * 17.5, "ghosts", "orange-left.png");
+    this.pink = this.add.pink(TILE_SIZE * 14.5, TILE_SIZE * 17.5, "ghosts", "pink-left.png");
+    this.red = this.add.red(TILE_SIZE * 14, TILE_SIZE * 14.5, "ghosts", "red-left.png");
     this.physics.add.collider(this.red, this.wallsLayer);
     this.physics.add.collider(this.blue, this.wallsLayer);
     this.physics.add.collider(this.orange, this.wallsLayer);
@@ -134,19 +134,15 @@ export default class Game extends Scene {
 
   setupListeners() {
     this.cursors.left?.on('down', () => {
-      console.log('left')
       this.pacman?.move(DIRECTIONS.LEFT)
     })
     this.cursors.right?.on('down', () => {
-      console.log('right')
       this.pacman?.move(DIRECTIONS.RIGHT)
     })
     this.cursors.up?.on('down', () => {
-      console.log('up')
       this.pacman?.move(DIRECTIONS.UP)
     })
     this.cursors.down?.on('down', () => {
-      console.log('down')
       this.pacman?.move(DIRECTIONS.DOWN)
     })
 
@@ -188,6 +184,10 @@ export default class Game extends Scene {
   createAnimations() {
     if(!this.pacman) return;
     this.pacman.generateAnimations();
+    this.red?.generateAnimations("red");
+    this.pink?.generateAnimations("pink");
+    this.orange?.generateAnimations("orange");
+    this.blue?.generateAnimations("blue");
   }
 
   drawDebug() {
