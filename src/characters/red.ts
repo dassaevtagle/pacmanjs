@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import Ghost from "./ghost";
 import { DIRECTIONS } from "../constants/directions";
 import TilesUtils from "../utils/tiles";
+import { TILE_SIZE } from "../constants/game";
 
 declare global {
   namespace Phaser.GameObjects {
@@ -18,19 +19,23 @@ export default class RedGhost extends Ghost {
 
   measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[]): { [key: string]: number; } {
     let distanceDict: { [key: string]: number; } = {};
+    let markerCoordinates = {
+      x: marker.x * TILE_SIZE,
+      y: marker.y * TILE_SIZE
+    }
     possibleDirections.forEach((direction) => {
       switch (direction) {
         case DIRECTIONS.UP:
-          distanceDict[DIRECTIONS.UP] = TilesUtils.getDistance(marker.x, marker.y - 1, pacmanX, pacmanY);
+          distanceDict[DIRECTIONS.UP] = TilesUtils.getDistance(markerCoordinates.x, markerCoordinates.y - 1, pacmanX, pacmanY);
           break;
         case DIRECTIONS.DOWN:
-          distanceDict[DIRECTIONS.DOWN] = TilesUtils.getDistance(marker.x, marker.y + 1, pacmanX, pacmanY);
+          distanceDict[DIRECTIONS.DOWN] = TilesUtils.getDistance(markerCoordinates.x, markerCoordinates.y + 1, pacmanX, pacmanY);
           break;
         case DIRECTIONS.LEFT:
-          distanceDict[DIRECTIONS.LEFT] = TilesUtils.getDistance(marker.x - 1, marker.y, pacmanX, pacmanY);
+          distanceDict[DIRECTIONS.LEFT] = TilesUtils.getDistance(markerCoordinates.x - 1, markerCoordinates.y, pacmanX, pacmanY);
           break;
         case DIRECTIONS.RIGHT:
-          distanceDict[DIRECTIONS.RIGHT] = TilesUtils.getDistance(marker.x + 1, marker.y, pacmanX, pacmanY);
+          distanceDict[DIRECTIONS.RIGHT] = TilesUtils.getDistance(markerCoordinates.x + 1, markerCoordinates.y, pacmanX, pacmanY);
           break;
       }
     });

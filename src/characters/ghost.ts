@@ -28,7 +28,7 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         this._initialDirection = initialDirection;
     }
 
-    update(map: Phaser.Tilemaps.Tilemap, pacmanX: number, pacmanY: number) {
+    update(map: Phaser.Tilemaps.Tilemap, pacmanX: number, pacmanY: number, pacmanOrientation?: DIRECTIONS, redX?: number, redY?: number) {
         if (!this.body) return;
         this.toggleScatterModeThrottled();
         if (this._isFirstMove) {
@@ -44,7 +44,7 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
 
         //Intersection tiles take priority over walls
         if (this.thereIsAnIntersectionTile() || this.thereIsAWall(this._direction)) {
-            let direction = this.chooseNextDirection(pacmanX, pacmanY);
+            let direction = this.chooseNextDirection(pacmanX, pacmanY, pacmanOrientation, redX, redY);
             this.changeDirection(direction);
         }
     }
@@ -83,13 +83,13 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         }, 300);
     }
 
-    chooseNextDirection(pacmanX: number, pacmanY: number): DIRECTIONS {
+    chooseNextDirection(pacmanX: number, pacmanY: number, pacmanOrientation?: DIRECTIONS, redX?: number, redY?: number): DIRECTIONS {
         let possibleDirections = this.checkPossibleDirections();
         let distanceDict: { [key: string]: number } = {};
         if (this._isScatterMode) {
             distanceDict = this.measureStrategyScatterMode(possibleDirections);
         } else {
-            distanceDict = this.measureStrategyChaseMode(this._marker, pacmanX, pacmanY, possibleDirections);
+            distanceDict = this.measureStrategyChaseMode(this._marker, pacmanX, pacmanY, possibleDirections, pacmanOrientation, redX, redY);
         }
         let min = Math.min(...Object.values(distanceDict));
         let minKey = Object.keys(distanceDict).find(key => distanceDict[key] === min);
@@ -117,7 +117,7 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         return distanceDict;
     }
 
-    abstract measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[]): { [key: string]: number; };
+    abstract measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[], pacmanOrientation?: DIRECTIONS, redX?: number, redY?: number): { [key: string]: number; };
 
     changeDirection(direction: DIRECTIONS) {
         if (!this.body) return false;
@@ -268,5 +268,9 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
                 this.debugGraphics.strokeRect(worldX, worldY, TILE_SIZE, TILE_SIZE);
             }
         }
+    }
+
+    get marker() {
+        return this._marker;
     }
 }

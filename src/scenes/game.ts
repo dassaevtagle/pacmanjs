@@ -101,10 +101,10 @@ export default class Game extends Scene {
   update(t: number, dt: number) {
     if (!this.map || !this.pacman || !this.red || !this.pink || !this.orange || !this.blue || !this.wallsLayer || !this.decisionTilesLayer) return;
     this.pacman.update(this.cursors, this.map);
+    this.blue.update(this.map, this.pacman.x, this.pacman.y, this.pacman.getOrientation, this.red.marker.x, this.red.marker.y);
     this.red.update(this.map, this.pacman.x, this.pacman.y);
-    this.orange.update(this.map, this.pacman.x, this.pacman.y);
-    this.blue.update(this.map, this.pacman.x, this.pacman.y);
-    this.pink.update(this.map, this.pacman.x, this.pacman.y);
+    this.pink.update(this.map, this.pacman.x, this.pacman.y, this.pacman.getOrientation);
+    this.orange.update(this.map, this.pacman.x, this.pacman.y, this.pacman.getOrientation);
     const GAME_WIDTH = 330;
     if (!this.pacman || !this.foodLayer) return;
 

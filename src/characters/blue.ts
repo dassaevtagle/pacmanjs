@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import Ghost from "./ghost";
 import { DIRECTIONS } from "../constants/directions";
 import TilesUtils from "../utils/tiles";
+import { TILE_SIZE } from "../constants/game";
 
 declare global {
 	namespace Phaser.GameObjects {
@@ -14,28 +15,32 @@ declare global {
 export default class BlueGhost extends Ghost {
 	constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
 		super(scene, x, y, texture, 27, 35, DIRECTIONS.UP, frame);
-	  }
-	
-	  measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[]): { [key: string]: number; } {
+	}
+
+	measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[], pacmanOrientation: DIRECTIONS, redX: number, redY: number): { [key: string]: number; } {
 		let distanceDict: { [key: string]: number; } = {};
+		let markerCoordinates = {
+			x: marker.x * TILE_SIZE,
+			y: marker.y * TILE_SIZE
+		}
 		possibleDirections.forEach((direction) => {
-		  switch (direction) {
-			case DIRECTIONS.UP:
-			  distanceDict[DIRECTIONS.UP] = TilesUtils.getDistance(marker.x, marker.y - 1, pacmanX, pacmanY);
-			  break;
-			case DIRECTIONS.DOWN:
-			  distanceDict[DIRECTIONS.DOWN] = TilesUtils.getDistance(marker.x, marker.y + 1, pacmanX, pacmanY);
-			  break;
-			case DIRECTIONS.LEFT:
-			  distanceDict[DIRECTIONS.LEFT] = TilesUtils.getDistance(marker.x - 1, marker.y, pacmanX, pacmanY);
-			  break;
-			case DIRECTIONS.RIGHT:
-			  distanceDict[DIRECTIONS.RIGHT] = TilesUtils.getDistance(marker.x + 1, marker.y, pacmanX, pacmanY);
-			  break;
-		  }
+			switch (direction) {
+				case DIRECTIONS.UP:
+					distanceDict[DIRECTIONS.UP] = TilesUtils.blueChaseStrategy(markerCoordinates.x, markerCoordinates.y - 1, pacmanX, pacmanY, pacmanOrientation, redX * TILE_SIZE, redY * TILE_SIZE);
+					break;
+				case DIRECTIONS.DOWN:
+					distanceDict[DIRECTIONS.DOWN] = TilesUtils.blueChaseStrategy(markerCoordinates.x, markerCoordinates.y + 1, pacmanX, pacmanY, pacmanOrientation, redX * TILE_SIZE, redY * TILE_SIZE);
+					break;
+				case DIRECTIONS.LEFT:
+					distanceDict[DIRECTIONS.LEFT] = TilesUtils.blueChaseStrategy(markerCoordinates.x - 1, markerCoordinates.y, pacmanX, pacmanY, pacmanOrientation, redX * TILE_SIZE, redY * TILE_SIZE);
+					break;
+				case DIRECTIONS.RIGHT:
+					distanceDict[DIRECTIONS.RIGHT] = TilesUtils.blueChaseStrategy(markerCoordinates.x + 1, markerCoordinates.y, pacmanX, pacmanY, pacmanOrientation, redX * TILE_SIZE, redY * TILE_SIZE);
+					break;
+			}
 		});
 		return distanceDict;
-	  }
+	}
 }
 
 Phaser.GameObjects.GameObjectFactory.register('blue', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, frame?: string | number) {

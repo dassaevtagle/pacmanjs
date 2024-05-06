@@ -184,6 +184,10 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 			frameRate: this._animFrameRate,
 		})
 	}
+
+	get getOrientation() {
+		return this._direction || DIRECTIONS.LEFT;
+	}
 }
 
 Phaser.GameObjects.GameObjectFactory.register('pacman', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, frame?: string | number) {

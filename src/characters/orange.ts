@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import Ghost from "./ghost";
 import { DIRECTIONS } from "../constants/directions";
 import TilesUtils from "../utils/tiles";
+import { TILE_SIZE } from "../constants/game";
 
 declare global {
 	namespace Phaser.GameObjects {
@@ -12,25 +13,36 @@ declare global {
 }
 
 export default class OrangeGhost extends Ghost {
+	private _scatterModeTileX = 0;
+	private _scatterModeTileY = 35;
 	constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
 		super(scene, x, y, texture, 0, 35, DIRECTIONS.UP, frame);
+	  }
+
+	  update(map: Phaser.Tilemaps.Tilemap, pacmanX: number, pacmanY: number, pacmanOrientation: DIRECTIONS): null | undefined {
+		super.update(map, pacmanX, pacmanY, pacmanOrientation);
+		return null;
 	  }
 	
 	  measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[]): { [key: string]: number; } {
 		let distanceDict: { [key: string]: number; } = {};
+		let markerCoordinates = {
+			x: marker.x * TILE_SIZE,
+			y: marker.y * TILE_SIZE
+		}
 		possibleDirections.forEach((direction) => {
 		  switch (direction) {
 			case DIRECTIONS.UP:
-			  distanceDict[DIRECTIONS.UP] = TilesUtils.getDistance(marker.x, marker.y - 1, pacmanX, pacmanY);
+			  distanceDict[DIRECTIONS.UP] = TilesUtils.orangeChaseStrategy(markerCoordinates.x, markerCoordinates.y - 1, pacmanX, pacmanY, this._scatterModeTileX * TILE_SIZE, this._scatterModeTileY * TILE_SIZE);
 			  break;
 			case DIRECTIONS.DOWN:
-			  distanceDict[DIRECTIONS.DOWN] = TilesUtils.getDistance(marker.x, marker.y + 1, pacmanX, pacmanY);
+			  distanceDict[DIRECTIONS.DOWN] = TilesUtils.orangeChaseStrategy(markerCoordinates.x, markerCoordinates.y + 1, pacmanX, pacmanY, this._scatterModeTileX * TILE_SIZE, this._scatterModeTileY * TILE_SIZE);
 			  break;
 			case DIRECTIONS.LEFT:
-			  distanceDict[DIRECTIONS.LEFT] = TilesUtils.getDistance(marker.x - 1, marker.y, pacmanX, pacmanY);
+			  distanceDict[DIRECTIONS.LEFT] = TilesUtils.orangeChaseStrategy(markerCoordinates.x - 1, markerCoordinates.y, pacmanX, pacmanY, this._scatterModeTileX * TILE_SIZE, this._scatterModeTileY * TILE_SIZE);
 			  break;
 			case DIRECTIONS.RIGHT:
-			  distanceDict[DIRECTIONS.RIGHT] = TilesUtils.getDistance(marker.x + 1, marker.y, pacmanX, pacmanY);
+			  distanceDict[DIRECTIONS.RIGHT] = TilesUtils.orangeChaseStrategy(markerCoordinates.x + 1, markerCoordinates.y, pacmanX, pacmanY, this._scatterModeTileX * TILE_SIZE, this._scatterModeTileY * TILE_SIZE);
 			  break;
 		  }
 		});
