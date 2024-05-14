@@ -18,7 +18,9 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
     private canTurn = true;
     private _scatterModeTile: Phaser.Geom.Point;
     private _isScatterMode = true;
+    private _isFrightened = false;
     private _timerFlag: null | number = null;
+    private _frightenedModeTimer: null | number = null;
     //@ts-ignore
     private _ghostColor: "red" | "orange" | "pink" | "blue";
 
@@ -28,9 +30,15 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         this._initialDirection = initialDirection;
     }
 
+    get marker() {
+        return this._marker;
+    }
+
     update(map: Phaser.Tilemaps.Tilemap, pacmanX: number, pacmanY: number, pacmanOrientation?: DIRECTIONS, redX?: number, redY?: number) {
         if (!this.body) return;
-        this.toggleScatterModeThrottled();
+        if(!this._isFrightened) {
+            this.toggleScatterModeThrottled();
+        }
         if (this._isFirstMove) {
             this.changeDirection(this._initialDirection);
             this._isFirstMove = false;
@@ -49,6 +57,27 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         }
     }
 
+    frighten() {
+        if(this._timerFlag) {
+            clearTimeout(this._timerFlag);
+            this._timerFlag = null;
+        }
+        if(this._frightenedModeTimer) {
+            clearTimeout(this._frightenedModeTimer);
+            this._frightenedModeTimer = null;
+        }
+        this._frightenedModeTimer = setTimeout(() => {
+            this._isFrightened = false;
+            this._speed += 12;
+        }, 7000);
+        //If it is frightened already, only set the timer again
+        if(this._isFrightened) return;
+        this.reverseDirection();
+        this._isFrightened = true;
+        this.setTexture("ghosts", "frightened-1.png")
+        this._speed -= 12;
+    }
+
     toggleScatterModeThrottled() {
         if (this._timerFlag === null) {
             this._timerFlag = setTimeout(() => {
@@ -60,7 +89,7 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
     }
 
     reverseDirection() {
-        switch(this._direction){
+        switch (this._direction) {
             case DIRECTIONS.UP:
                 this.changeDirection(DIRECTIONS.DOWN);
                 break;
@@ -86,7 +115,10 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
     chooseNextDirection(pacmanX: number, pacmanY: number, pacmanOrientation?: DIRECTIONS, redX?: number, redY?: number): DIRECTIONS {
         let possibleDirections = this.checkPossibleDirections();
         let distanceDict: { [key: string]: number } = {};
-        if (this._isScatterMode) {
+        if (this._isFrightened) {
+            let randomIndex = Math.floor(Math.random() * possibleDirections.length);
+            return possibleDirections[randomIndex];
+        } else if (this._isScatterMode) {
             distanceDict = this.measureStrategyScatterMode(possibleDirections);
         } else {
             distanceDict = this.measureStrategyChaseMode(this._marker, pacmanX, pacmanY, possibleDirections, pacmanOrientation, redX, redY);
@@ -133,19 +165,19 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
         switch (direction) {
             case DIRECTIONS.UP:
                 this.setVelocity(0, -this._speed);
-				this.anims.play(`${this._ghostColor}-up`, true);
+                if(!this._isFrightened) this.anims.play(`${this._ghostColor}-up`, true);
                 break;
             case DIRECTIONS.DOWN:
                 this.setVelocity(0, this._speed);
-				this.anims.play(`${this._ghostColor}-down`, true);
+                if(!this._isFrightened) this.anims.play(`${this._ghostColor}-down`, true);
                 break;
             case DIRECTIONS.LEFT:
                 this.setVelocity(-this._speed, 0);
-				this.anims.play(`${this._ghostColor}-left`, true);
+                if(!this._isFrightened) this.anims.play(`${this._ghostColor}-left`, true);
                 break;
             case DIRECTIONS.RIGHT:
                 this.setVelocity(this._speed, 0);
-				this.anims.play(`${this._ghostColor}-right`, true);
+                if(!this._isFrightened) this.anims.play(`${this._ghostColor}-right`, true);
                 break;
         }
 
@@ -237,21 +269,21 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
     generateAnimations(ghost: "blue" | "orange" | "pink" | "red") {
         this._ghostColor = ghost;
         this.anims.create({
-			key: `${ghost}-left`,
-			frames: [{ key: 'ghosts', frame: `${ghost}-left.png` }]
-		});
+            key: `${ghost}-left`,
+            frames: [{ key: 'ghosts', frame: `${ghost}-left.png` }]
+        });
         this.anims.create({
-			key: `${ghost}-right`,
-			frames: [{ key: 'ghosts', frame: `${ghost}-right.png` }]
-		});
+            key: `${ghost}-right`,
+            frames: [{ key: 'ghosts', frame: `${ghost}-right.png` }]
+        });
         this.anims.create({
-			key: `${ghost}-down`,
-			frames: [{ key: 'ghosts', frame: `${ghost}-down.png` }]
-		});
+            key: `${ghost}-down`,
+            frames: [{ key: 'ghosts', frame: `${ghost}-down.png` }]
+        });
         this.anims.create({
-			key: `${ghost}-up`,
-			frames: [{ key: 'ghosts', frame: `${ghost}-up.png` }]
-		});
+            key: `${ghost}-up`,
+            frames: [{ key: 'ghosts', frame: `${ghost}-up.png` }]
+        });
     }
 
     paintNearbyTiles() {
@@ -268,9 +300,5 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
                 this.debugGraphics.strokeRect(worldX, worldY, TILE_SIZE, TILE_SIZE);
             }
         }
-    }
-
-    get marker() {
-        return this._marker;
     }
 }

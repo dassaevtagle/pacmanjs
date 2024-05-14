@@ -1,6 +1,6 @@
 {
   "frames": {
-    "weak-1.png": {
+    "frightened-1.png": {
       "frame": {
         "x": 0,
         "y": 0,
@@ -48,7 +48,7 @@
         "y": 0.5
       }
     },
-    "weak-2.png": {
+    "frightened-2.png": {
       "frame": {
         "x": 0,
         "y": 48,

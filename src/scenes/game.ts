@@ -119,17 +119,6 @@ export default class Game extends Scene {
     // @ts-ignore: Unreachable code error
     this.physics.overlap(this.pacman, this.foodLayer, this.handleFoodOverlap, null, this);
 
-    /* this.physics.overlap(this.red, this.decisionTilesLayer, (ghost: RedGhost, tile: Phaser.Tilemaps.Tile) => {
-      console.log(ghost)
-      console.log(tile)
-
-      //If there is a decisionTile collide
-      if (TilesUtils.findNearestTile(ghost.x) === tile.x && TilesUtils.findNearestTile(ghost.y) === tile.y) {
-        this.red?.changeDirection(this.wallsLayer, { isDecisionTile: true });
-      }
-    }, (ghost: RedGhost, tile: Phaser.Tilemaps.Tile) => {
-      return tile.index === -1 ? false : true;
-    }, this); */
   }
 
   setupListeners() {
@@ -155,13 +144,21 @@ export default class Game extends Scene {
 
   handleFoodOverlap(pacman: Pacman, tile: Phaser.Tilemaps.Tile) {
     if (!this.foodLayer || !pacman.body) return;
-    tile.setAlpha(0);
+    tile.setVisible(false);
     tile.setCollision(false, false, false, false, false);
     this.score++;
     if (this.tileHasPowerup(tile)) {
-      console.log('powerup!');
+      this.frightenGhosts();
     }
+    this.foodLayer.removeTileAt(tile.x, tile.y);
     return false;
+  }
+
+  frightenGhosts() {
+    this.red?.frighten();
+    this.orange?.frighten();
+    this.blue?.frighten();
+    this.pink?.frighten();
   }
 
   tileHasPowerup(tile: Phaser.Tilemaps.Tile) {
