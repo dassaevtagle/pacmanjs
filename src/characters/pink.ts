@@ -3,18 +3,19 @@ import Ghost from "./ghost";
 import { DIRECTIONS } from "../constants/directions";
 import TilesUtils from "../utils/tiles";
 import { TILE_SIZE } from "../constants/game";
+import { Reactor } from "../utils/reactor";
 
 declare global {
   namespace Phaser.GameObjects {
     interface GameObjectFactory {
-      pink(x: number, y: number, texture: string, frame?: string | number): PinkGhost
+      pink(x: number, y: number, texture: string, reactor: Reactor, frame?: string | number): PinkGhost
     }
   }
 }
 
 export default class PinkGhost extends Ghost {
-  constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
-    super(scene, x, y, texture, 2, 0, DIRECTIONS.UP, frame);
+  constructor(scene: Phaser.Scene, x: number, y: number, texture: string, reactor: Reactor, frame?: string | number) {
+    super(scene, x, y, texture, 2, 0, DIRECTIONS.UP, reactor, frame);
   }
   update(map: Phaser.Tilemaps.Tilemap, pacmanX: number, pacmanY: number, pacmanOrientation: DIRECTIONS): null | undefined {
     super.update(map, pacmanX, pacmanY, pacmanOrientation);
@@ -47,8 +48,8 @@ export default class PinkGhost extends Ghost {
   }
 }
 
-Phaser.GameObjects.GameObjectFactory.register('pink', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, frame?: string | number) {
-  var sprite = new PinkGhost(this.scene, x, y, texture, frame)
+Phaser.GameObjects.GameObjectFactory.register('pink', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, reactor: Reactor, frame?: string | number) {
+  var sprite = new PinkGhost(this.scene, x, y, texture, reactor, frame)
 
   this.displayList.add(sprite)
   this.updateList.add(sprite)

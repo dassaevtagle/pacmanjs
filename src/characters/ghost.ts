@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { DIRECTIONS } from "../constants/directions";
 import TilesUtils from "../utils/tiles";
 import { TILE_SIZE } from "../constants/game";
+import { Reactor } from "../utils/reactor";
 
 export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
     private debugGraphics = this.scene.add.graphics().setAlpha(0.50).setDepth(20);
@@ -23,11 +24,17 @@ export default abstract class Ghost extends Phaser.Physics.Arcade.Sprite {
     private _frightenedModeTimer: null | number = null;
     //@ts-ignore
     private _ghostColor: "red" | "orange" | "pink" | "blue";
+    private _reactor: Reactor;
 
-    constructor(scene: Phaser.Scene, x: number, y: number, texture: string, scatterModeTileX: number, scatterModeTileY: number, initialDirection: DIRECTIONS, frame?: string | number) {
+    constructor(scene: Phaser.Scene, x: number, y: number, texture: string, scatterModeTileX: number, scatterModeTileY: number, initialDirection: DIRECTIONS, reactor: Reactor, frame?: string | number) {
         super(scene, x, y, texture, frame);
         this._scatterModeTile = new Phaser.Geom.Point(scatterModeTileX, scatterModeTileY);
         this._initialDirection = initialDirection;
+        this._reactor = reactor;
+
+       /*  this._reactor.on("pacman-die", () => {
+            this.setVelocity(0, 0);
+        }); */
     }
 
     get marker() {

@@ -2,11 +2,12 @@ import Phaser from 'phaser'
 import { DIRECTIONS } from '../constants/directions'
 import { TILE_SIZE } from '../constants/game'
 import { getOppositeDirection } from '../utils/directions'
+import { Reactor } from '../utils/reactor'
 
 declare global {
 	namespace Phaser.GameObjects {
 		interface GameObjectFactory {
-			pacman(x: number, y: number, texture: string, frame?: string | number): Pacman
+			pacman(x: number, y: number, texture: string, reactor: Reactor, frame?: string | number): Pacman
 		}
 	}
 }
@@ -19,19 +20,24 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 	private _nextDirection?: DIRECTIONS
 	private _turningPointThreshold = 1.5;
 	private _isFirstMove: boolean = true;
-	private _turnSpeed = 150;
 	private _speed = 85;
 	private _animFrameRate = 11;
 	private _nearbyTiles: { [key: string]: Phaser.Tilemaps.Tile | null } = {};
 	private _marker = new Phaser.Geom.Point();
 	private _turningPoint = new Phaser.Geom.Point();
+	private _reactor: Reactor;
 
 	get lives() {
 		return this._lives;
 	}
 
-	constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
+	get getOrientation() {
+		return this._direction || DIRECTIONS.LEFT;
+	}
+
+	constructor(scene: Phaser.Scene, x: number, y: number, texture: string, reactor: Reactor, frame?: string | number) {
 		super(scene, x, y, texture, frame)
+		this._reactor = reactor;
 	}
 
 	preUpdate(t: number, dt: number) {
@@ -100,6 +106,13 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 
 	}
 
+	die() {
+		this.setVelocity(0, 0);
+		this._reactor.emit("pacman-die");
+		this.anims.play('pacman-die', true);
+		this._lives--;
+	}
+
 	calculateTurningPoint() {
 		this._turningPoint.x = (this._marker.x * TILE_SIZE) + (TILE_SIZE / 2);
 		this._turningPoint.y = (this._marker.y * TILE_SIZE) + (TILE_SIZE / 2);
@@ -151,9 +164,9 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 
 		this.anims.create({
 			key: 'pacman-die',
-			frames: this.anims.generateFrameNames('pacman', { start: 1, end: 15, prefix: 'die-', suffix: '.png' }),
-			repeat: -1,
+			frames: this.anims.generateFrameNames('pacman', { start: 1, end: 13, prefix: 'die-', suffix: '.png' }),
 			frameRate: this._animFrameRate,
+			hideOnComplete: true,
 		})
 
 		this.anims.create({
@@ -184,14 +197,10 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 			frameRate: this._animFrameRate,
 		})
 	}
-
-	get getOrientation() {
-		return this._direction || DIRECTIONS.LEFT;
-	}
 }
 
-Phaser.GameObjects.GameObjectFactory.register('pacman', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, frame?: string | number) {
-	var sprite = new Pacman(this.scene, x, y, texture, frame)
+Phaser.GameObjects.GameObjectFactory.register('pacman', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, reactor: Reactor, frame?: string | number) {
+	var sprite = new Pacman(this.scene, x, y, texture, reactor, frame)
 
 	this.displayList.add(sprite)
 	this.updateList.add(sprite)

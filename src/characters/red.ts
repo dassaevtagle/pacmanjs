@@ -3,18 +3,19 @@ import Ghost from "./ghost";
 import { DIRECTIONS } from "../constants/directions";
 import TilesUtils from "../utils/tiles";
 import { TILE_SIZE } from "../constants/game";
+import { Reactor } from "../utils/reactor";
 
 declare global {
   namespace Phaser.GameObjects {
     interface GameObjectFactory {
-      red(x: number, y: number, texture: string, frame?: string | number): RedGhost
+      red(x: number, y: number, texture: string, reactor: Reactor, frame?: string | number): RedGhost
     }
   }
 }
 
 export default class RedGhost extends Ghost {
-  constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
-    super(scene, x, y, texture, 25, 0, DIRECTIONS.LEFT, frame);
+  constructor(scene: Phaser.Scene, x: number, y: number, texture: string, reactor: Reactor, frame?: string | number) {
+    super(scene, x, y, texture, 25, 0, DIRECTIONS.LEFT, reactor, frame);
   }
 
   measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[]): { [key: string]: number; } {
@@ -43,8 +44,8 @@ export default class RedGhost extends Ghost {
   }
 }
 
-Phaser.GameObjects.GameObjectFactory.register('red', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, frame?: string | number) {
-  var sprite = new RedGhost(this.scene, x, y, texture, frame)
+Phaser.GameObjects.GameObjectFactory.register('red', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, reactor: Reactor, frame?: string | number) {
+  var sprite = new RedGhost(this.scene, x, y, texture, reactor, frame)
 
   this.displayList.add(sprite)
   this.updateList.add(sprite)

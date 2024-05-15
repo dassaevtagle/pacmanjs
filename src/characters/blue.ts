@@ -3,18 +3,19 @@ import Ghost from "./ghost";
 import { DIRECTIONS } from "../constants/directions";
 import TilesUtils from "../utils/tiles";
 import { TILE_SIZE } from "../constants/game";
+import { Reactor } from "../utils/reactor";
 
 declare global {
 	namespace Phaser.GameObjects {
 		interface GameObjectFactory {
-			blue(x: number, y: number, texture: string, frame?: string | number): BlueGhost
+			blue(x: number, y: number, texture: string, reactor: Reactor, frame?: string | number): BlueGhost
 		}
 	}
 }
 
 export default class BlueGhost extends Ghost {
-	constructor(scene: Phaser.Scene, x: number, y: number, texture: string, frame?: string | number) {
-		super(scene, x, y, texture, 27, 35, DIRECTIONS.UP, frame);
+	constructor(scene: Phaser.Scene, x: number, y: number, texture: string, reactor: Reactor, frame?: string | number) {
+		super(scene, x, y, texture, 27, 35, DIRECTIONS.UP, reactor, frame);
 	}
 
 	measureStrategyChaseMode(marker: { x: number, y: number }, pacmanX: number, pacmanY: number, possibleDirections: DIRECTIONS[], pacmanOrientation: DIRECTIONS, redX: number, redY: number): { [key: string]: number; } {
@@ -43,8 +44,8 @@ export default class BlueGhost extends Ghost {
 	}
 }
 
-Phaser.GameObjects.GameObjectFactory.register('blue', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, frame?: string | number) {
-	var sprite = new BlueGhost(this.scene, x, y, texture, frame)
+Phaser.GameObjects.GameObjectFactory.register('blue', function (this: Phaser.GameObjects.GameObjectFactory, x: number, y: number, texture: string, reactor: Reactor, frame?: string | number) {
+	var sprite = new BlueGhost(this.scene, x, y, texture, reactor, frame)
 
 	this.displayList.add(sprite)
 	this.updateList.add(sprite)
