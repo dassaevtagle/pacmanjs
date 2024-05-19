@@ -12,6 +12,7 @@ import { TILE_SIZE } from "../constants/game";
 import PinkGhost from "../characters/pink";
 import BlueGhost from "../characters/blue";
 import { Reactor } from "../utils/reactor";
+import Ghost from "../characters/ghost";
 
 type TileCollisionGroup = {
   draworder: string;
@@ -48,7 +49,7 @@ export default class Game extends Scene {
   private wallsLayer!: Phaser.Tilemaps.TilemapLayer | null;
   private foodLayer!: Phaser.Tilemaps.TilemapLayer | null;
   private highScoreLayer!: Phaser.Tilemaps.TilemapLayer | null;
-  private decisionTilesLayer!: Phaser.Tilemaps.TilemapLayer | null;
+  private ghostDoorsLayer!: Phaser.Tilemaps.TilemapLayer | null;
   private speed = 120;
   private score = -2;
   private red!: RedGhost | null;
@@ -75,18 +76,18 @@ export default class Game extends Scene {
     this.wallsLayer = this.map.createLayer('Walls', this.tileset);
     this.highScoreLayer = this.map.createLayer('HighScore', this.tileset);
     this.foodLayer = this.map.createLayer('Food', this.tileset);
-    this.decisionTilesLayer = this.map.createLayer('Intersections', this.tileset);
-    if (!this.wallsLayer || !this.foodLayer || !this.highScoreLayer || !this.decisionTilesLayer) return;
+    this.ghostDoorsLayer = this.map.createLayer('Ghost_doors', this.tileset);
+    if (!this.wallsLayer || !this.foodLayer || !this.highScoreLayer || !this.ghostDoorsLayer) return;
 
     this.debugGraphics = this.add.graphics();
 
     this.foodLayer.setCollisionByExclusion([-1]);
-    this.decisionTilesLayer.setCollisionByExclusion([-1]);
+    this.ghostDoorsLayer.setCollisionByExclusion([-1]);
     this.wallsLayer.setCollisionByProperty({ collides: true });
-    this.decisionTilesLayer.setAlpha(0);
 
     this.pacman = this.add.pacman(TILE_SIZE * 14, TILE_SIZE * 26.5, 'pacman', this.reactor, 'die-1.png');
     this.physics.add.collider(this.pacman, this.wallsLayer);
+    this.physics.add.collider(this.pacman, this.ghostDoorsLayer);
 
     this.blue = this.add.blue(TILE_SIZE * 12.5, TILE_SIZE * 17.5, "ghosts", this.reactor, "blue-left.png");
     this.orange = this.add.orange(TILE_SIZE * 15.5, TILE_SIZE * 17.5, "ghosts", this.reactor, "orange-left.png");
@@ -102,7 +103,7 @@ export default class Game extends Scene {
   }
 
   update(t: number, dt: number) {
-    if (!this.map || !this.pacman || !this.red || !this.pink || !this.orange || !this.blue || !this.wallsLayer || !this.decisionTilesLayer) return;
+    if (!this.map || !this.pacman || !this.red || !this.pink || !this.orange || !this.blue || !this.wallsLayer) return;
     this.pacman.update(this.cursors, this.map);
     this.blue.update(this.map, this.pacman.x, this.pacman.y, this.pacman.getOrientation, this.red.marker.x, this.red.marker.y);
     this.red.update(this.map, this.pacman.x, this.pacman.y);
@@ -121,11 +122,37 @@ export default class Game extends Scene {
 
     // @ts-ignore: Unreachable code error
     this.physics.overlap(this.pacman, this.foodLayer, this.handleFoodOverlap, undefined, this);
-    this.physics.overlap(this.red, this.pacman, this.pacmanDie, undefined, this);
-    this.physics.overlap(this.pink, this.pacman, this.pacmanDie, undefined, this);
-    this.physics.overlap(this.orange, this.pacman, this.pacmanDie, undefined, this);
-    this.physics.overlap(this.blue, this.pacman, this.pacmanDie, undefined, this);
+    // @ts-ignore: Unreachable code error
+    this.physics.overlap(this.red, this.pacman, this.handleGhostOverlap, undefined, this);
+    // @ts-ignore: Unreachable code error
+    this.physics.overlap(this.pink, this.pacman, this.handleGhostOverlap, undefined, this);
+    // @ts-ignore: Unreachable code error
+    this.physics.overlap(this.orange, this.pacman, this.handleGhostOverlap, undefined, this);
+    // @ts-ignore: Unreachable code error
+    this.physics.overlap(this.blue, this.pacman, this.handleGhostOverlap, undefined, this);
 
+  }
+  handleGhostOverlap(ghost: Ghost, pacman: Pacman, handleGhostOverlap: any, undefined: undefined, arg4: this) {
+    if (ghost._isEaten) return;
+    if (ghost._isFrightened) {
+      console.log(this.score + " points!");
+      ghost.eaten();
+      this.setScore(this.score + 10);
+    } else {
+      this.pacmanDie();
+    }
+  }
+  
+  handleFoodOverlap(pacman: Pacman, tile: Phaser.Tilemaps.Tile) {
+    if (!this.foodLayer || !pacman.body) return;
+    if (this.tileHasPowerup(tile)) {
+      this.setScore(this.score + 5);
+      this.frightenGhosts();
+    } else {
+      this.setScore(this.score + 1);
+    }
+    this.foodLayer.removeTileAt(tile.x, tile.y);
+    return false;
   }
 
   setupListeners() {
@@ -166,17 +193,6 @@ export default class Game extends Scene {
     }
   }
 
-  handleFoodOverlap(pacman: Pacman, tile: Phaser.Tilemaps.Tile) {
-    if (!this.foodLayer || !pacman.body) return;
-    if (this.tileHasPowerup(tile)) {
-      this.setScore(this.score + 5);
-      this.frightenGhosts();
-    } else {
-      this.setScore(this.score + 1);
-    }
-    this.foodLayer.removeTileAt(tile.x, tile.y);
-    return false;
-  }
 
   pacmanDie() {
     this.pacman?.die();
@@ -221,7 +237,6 @@ export default class Game extends Scene {
 
   drawDebug() {
     this.debugGraphics.clear();
-    this.decisionTilesLayer?.setAlpha(0);
 
     if (this.showDebug) {
       this.debugGraphics = this.add.graphics().setAlpha(0.5)
@@ -236,9 +251,6 @@ export default class Game extends Scene {
         collidingTileColor: new Phaser.Display.Color(0, 0, 255, 255),
         faceColor: new Phaser.Display.Color(0, 0, 255, 255)
       });
-
-      this.decisionTilesLayer?.setAlpha(80);
-      this.decisionTilesLayer?.setDepth(100);
     }
   }
 }

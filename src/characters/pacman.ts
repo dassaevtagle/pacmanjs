@@ -151,6 +151,24 @@ export default class Pacman extends Phaser.Physics.Arcade.Sprite {
 		return false;
 	}
 
+/* 	isAtGhostDoors(map: Phaser.Tilemaps.Tilemap) {
+		let target = null;
+		switch (this._direction) {
+			case DIRECTIONS.UP:
+				target = map.getTileAt(this._marker.x, this._marker.y - 1, true, "Ghost_doors");
+				break;
+			case DIRECTIONS.DOWN:
+				target = map.getTileAt(this._marker.x, this._marker.y + 1, true, "Ghost_doors");
+				break;
+			case DIRECTIONS.LEFT:
+				target = map.getTileAt(this._marker.x - 1, this._marker.y, true, "Ghost_doors");
+				break;
+			case DIRECTIONS.RIGHT:
+				target = map.getTileAt(this._marker.x + 1, this._marker.y, true, "Ghost_doors");
+				break;
+		}
+	}
+ */
 	thereIsAWall(direction: DIRECTIONS) {
 		//when index != 1 means that there is an actual tile in Walls Layer in that direction and pacman cannot move there
 		return this._nearbyTiles[direction] && this._nearbyTiles[direction]?.index !== -1 ? true : false;
